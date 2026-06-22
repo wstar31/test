@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Windows WSL2 环境复现 Hermes 微信多用户 ChatOps，说明边界、路径、部署、微信绑定和验证。">
+  <title>Hermes ChatOps Windows WSL2 复现页</title>
+  <link rel="stylesheet" href="./assets/hermes-aurora.css">
+</head>
+<body data-theme="windows-cobalt">
+  <div class="aurora" aria-hidden="true"></div>
+
+  <header>
+    <div class="container hero-shell" data-reveal>
+      <div>
+        <div class="eyebrow"><span class="status-dot"></span>Hermes WeChat ChatOps</div>
+        <h1>Hermes ChatOps Windows WSL2 复现页</h1>
+        <p class="lead">Windows 负责桌面和文件下载，WSL2 Ubuntu 负责 Linux 容器运行。复现时仍按 Ubuntu 的 /opt/hermes-deployment/ 路径、权限和 Docker 行为验证。</p>
+        <nav class="capsule-nav" aria-label="快速阅读导航"><a class="capsule-link" href="#overview">项目整体</a><span class="capsule-divider">|</span><a class="capsule-link" href="#deploy">WSL2 路径</a><span class="capsule-divider">|</span><a class="capsule-link" href="#entrypoints">入口</a><span class="capsule-divider">|</span><a class="capsule-link" href="#agnes">Agnes API</a><span class="capsule-divider">|</span><a class="capsule-link" href="#verify">验证</a><span class="capsule-divider">|</span><a class="capsule-link" href="#troubleshoot">排障</a></nav>
+        <div class="chips" aria-label="核心能力标签"><span class="chip">Windows 下载</span><span class="chip">WSL2 Ubuntu</span><span class="chip">Docker Desktop/Engine</span><span class="chip">Linux 路径</span><span class="chip">微信扫码</span></div>
+      </div>
+      <aside class="cockpit" aria-label="服务器驾驶舱状态面板">
+        <div class="cockpit-head"><span>windows wsl2 lab</span><span class="window-dots" aria-hidden="true"><i></i><i></i><i></i></span></div>
+        <div class="cockpit-body">
+          <div class="terminal-line"><span class="prompt">$</span><span>wsl -d Ubuntu</span><span class="terminal-ok">ready</span></div><div class="terminal-line"><span class="prompt">→</span><span>/mnt/d/... copy</span><span class="terminal-ok">staged</span></div><div class="terminal-line"><span class="prompt">→</span><span>/opt/hermes-deployment</span><span class="terminal-ok">runtime</span></div><div class="terminal-line"><span class="prompt">→</span><span>docker compose config</span><span class="terminal-ok">quiet</span></div>
+          <div class="console-meter"><div class="meter-row"><span>wsl2 path</span><strong>repeatable</strong></div><div class="meter-bar" aria-hidden="true"><span></span></div></div>
+        </div>
+      </aside>
+    </div>
+  </header>
+
+  <main class="container">
+    <section id="overview" data-reveal>
+      <div class="section-head"><div><div class="section-kicker">Cockpit Metrics</div><h2>Windows 只做外层，运行时以 WSL2 Linux 为准</h2></div><p>不要在 Windows 路径里直接跑容器项目。把发布包放入 WSL2，按 Linux 权限和 Linux Docker socket 验证。</p></div>
+      <div class="grid grid-5"><div class="panel-card metric"><span class="status-label">manager</span><strong>母体</strong><span>管理员微信入口，拥有宿主机、Docker、模型、用户和公共 Skill 管理能力。</span></div><div class="panel-card metric"><span class="status-label">isolated</span><strong>子实例</strong><span>每个普通用户独立容器、目录、记忆、文件和微信绑定。</span></div><div class="panel-card metric"><span class="status-label">onboarding</span><strong>接入链路</strong><span>母体创建实例、生成二维码并完成微信路由，扫码后进入对应子实例。</span></div><div class="panel-card metric"><span class="status-label">agnes</span><strong>免费模型</strong><span>文本、图片、视频使用 Agnes 模型和独立 key。</span></div><div class="panel-card metric"><span class="status-label">delivery</span><strong>交付闭环</strong><span>初始化、健康检查、文件校验和发布打包串成一条可复现路径。</span></div></div>
+    </section>
+
+    <section data-reveal>
+      <div class="section-kicker">Why Hermes</div>
+      <h2>它解决的不是聊天，而是运维入口碎片化</h2>
+      <div class="grid grid-2"><div class="panel-card"><h3>不用每天 SSH 进服务器</h3><p>常见状态、用户创建、二维码绑定、模型查看、文件管理，都通过母体走受控命令完成。</p></div><div class="panel-card"><h3>多人使用不互相污染</h3><p>子实例只能看到自己的工作区和文件区，不管理宿主机、母体、Docker 或其他用户。</p></div><div class="panel-card"><h3>模型和媒体能力分开</h3><p>聊天、图片、视频模型独立配置，避免一次切换把媒体能力覆盖。</p></div><div class="panel-card"><h3>成品文件直接送达微信</h3><p>Word、Excel、PPT、PDF、图片、视频通过 MEDIA 路径回传给对应用户。</p></div></div>
+    </section>
+
+    <section data-reveal>
+      <div class="section-kicker">System Rail</div>
+      <h2>系统分层像一条清晰的控制轨道</h2>
+      <p>微信负责入口，母体负责控制，Docker 负责隔离，子实例负责用户任务，Skill 和文件区负责交付。</p>
+      <div class="architecture" aria-label="Hermes 系统分层架构"><div class="arch-node"><span class="arch-index">01</span><h3>微信网关</h3><p>管理员和普通用户都从微信进入；网关只负责收发消息和二维码绑定。</p></div><div class="arch-node"><span class="arch-index">02</span><h3>母体 manager</h3><p>拥有高权限，但通过 policy 和 chatopsctl 把自然语言落到可审计命令。</p></div><div class="arch-node"><span class="arch-index">03</span><h3>Docker Compose</h3><p>统一管理 hermes_manager 和 bot_&lt;user_id&gt; 子实例，日志和健康状态可查。</p></div><div class="arch-node"><span class="arch-index">04</span><h3>子实例</h3><p>每个用户独立 workspace、files、memory，只能操作自己的目录。</p></div><div class="arch-node"><span class="arch-index">05</span><h3>Skill / Files</h3><p>公共 Skill、私有 Skill、MEDIA 文件和生成结果按作用域交付。</p></div></div>
+    </section>
+
+    <section data-reveal>
+      <div class="section-kicker">Runtime Guarantees</div>
+      <h2>运行边界与接入保障</h2>
+      <div class="grid grid-3"><div class="boundary-card "><h3>二维码交付</h3><p>母体绑定管理员和接入子实例时必须拿到二维码链接，保存图片，并通过 MEDIA 路径直接推送给微信管理员。</p></div><div class="boundary-card "><h3>DM open</h3><p>普通用户扫码接入默认选择 Allow all direct messages；只有实际出现 pending pairing 时才走审批兜底。</p></div><div class="boundary-card danger"><h3>Office 成品</h3><p>Word、Excel、PPT、PDF 等任务必须产出真实文件，写入子实例 files 目录，再由网关上传给用户。</p></div></div>
+      <p class="danger-text">运行保障不靠口头承诺：二维码、容器状态、DM open、文件成品和权限边界都要能被脚本验证。</p>
+    </section>
+
+    <section id="deploy" data-reveal>
+      <div class="section-head"><div><div class="section-kicker">Bootstrap Path</div><h2>WSL2 复现路径</h2></div><p>从 Windows 下载 zip 后复制到 WSL2 内，解 tar 保留执行位，再按 Ubuntu 脚本初始化。</p></div>
+      <div class="timeline-wrap">
+        <div class="timeline" aria-label="部署步骤"><button class="timeline-step is-active" type="button" data-step="1" aria-pressed="true"><b>1</b><span>解压并校验发布包</span></button><button class="timeline-step " type="button" data-step="2" aria-pressed="false"><b>2</b><span>复制到固定根目录</span></button><button class="timeline-step " type="button" data-step="3" aria-pressed="false"><b>3</b><span>安装 Docker 与 Compose</span></button><button class="timeline-step " type="button" data-step="4" aria-pressed="false"><b>4</b><span>运行初始化脚本</span></button><button class="timeline-step " type="button" data-step="5" aria-pressed="false"><b>5</b><span>启动母体</span></button><button class="timeline-step " type="button" data-step="6" aria-pressed="false"><b>6</b><span>绑定管理员微信</span></button><button class="timeline-step " type="button" data-step="7" aria-pressed="false"><b>7</b><span>运行验证脚本</span></button><button class="timeline-step " type="button" data-step="8" aria-pressed="false"><b>8</b><span>创建并绑定子实例</span></button></div>
+        <div class="timeline-detail">
+          <h3 id="timeline-title">解压并校验发布包</h3>
+          <p id="timeline-copy">先解 zip，再解 hermes-deployment.tar，校验必要部署文件的 sha256。</p>
+          <div class="command-card">
+      <div class="command-head"><span id="bootstrap-code-label">verify-package.sh</span><button class="copy-btn" type="button" data-copy="bootstrap-code">复制</button></div>
+      <pre id="bootstrap-code"><code>unzip hermes-chatops-release.zip
+tar -xf hermes-deployment.tar
+cd hermes-deployment
+sha256sum -c ../DEPLOYMENT_CHECKSUMS.sha256</code></pre>
+    </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="entrypoints" class="models-secrets-section" data-reveal>
+      <div class="section-head"><div><div class="section-kicker">Structured Entrypoints</div><h2>把母体、子实例、Skill 和密钥页拆成四个清楚入口</h2></div><p>母体不要东找西找。自然语言先映射到固定入口，入口解决不了再请求管理员确认宿主机操作。</p></div>
+      <div class="models-secrets-grid">
+        <div class="feature-card"><div class="tabs" role="tablist" aria-label="入口切换"><button class="tab-button active" type="button" role="tab" data-tab="manager" aria-selected="true">母体入口</button><span class="tab-divider">|</span><button class="tab-button " type="button" role="tab" data-tab="child" aria-selected="false">子实例</button><span class="tab-divider">|</span><button class="tab-button " type="button" role="tab" data-tab="skill" aria-selected="false">Skill</button><span class="tab-divider">|</span><button class="tab-button " type="button" role="tab" data-tab="secret" aria-selected="false">Agnes / 密钥</button></div><div class="tab-panel active" role="tabpanel" data-panel="manager" >
+          <div class="feature-panel">
+            <h3>母体先找规范入口，不先乱试命令</h3>
+            <p class="feature-lead">母体提示词和 policy 要把自然语言映射到 chatopsctl、scripts、validate.sh 这些明确入口。</p>
+            <ul class="feature-list"><li>状态、用户、模型、密钥、Skill、文件都要有固定命令路径。</li><li>入口无法覆盖时，母体应说明原因并请求管理员确认宿主机命令。</li><li>返回结果必须包含影响范围、是否成功和下一步验证。</li></ul>
+            <div class="feature-facts"><span><b>root</b><code>/opt/hermes-deployment/</code></span><span><b>tool</b><code>manager/bin/chatopsctl</code></span></div>
+          </div>
+        </div><div class="tab-panel " role="tabpanel" data-panel="child" hidden>
+          <div class="feature-panel">
+            <h3>用户扫码后直接进入子实例对话</h3>
+            <p class="feature-lead">子实例绑定微信时应选择 Allow all direct messages；如果配置成 Use DM pairing approval，就一定会弹 pairing code。</p>
+            <ul class="feature-list"><li>扫码后容器保持运行，不能因为绑定进程退出导致主服务退出。</li><li>bind_driver.py 要能拿到二维码 URL 并保存图片。</li><li>未开启 DM open 时才走 pending pairing 审批。</li></ul>
+            <div class="feature-facts"><span><b>driver</b><code>global_tools/bind_driver.py</code></span><span><b>mode</b><code>Allow all direct messages</code></span></div>
+          </div>
+        </div><div class="tab-panel " role="tabpanel" data-panel="skill" hidden>
+          <div class="feature-panel">
+            <h3>Skill 按公共和私有边界拆开</h3>
+            <p class="feature-lead">公共技能面向子实例同步，母体高权限能力只留在 manager，减少用户越界操作。</p>
+            <ul class="feature-list"><li>公共 Skill 改完后同步并重启需要加载的实例。</li><li>子实例不得拥有 Docker、宿主机和其他用户目录管理能力。</li><li>英文系统提示可以中文解释，但命令和文件名不翻译。</li></ul>
+            <div class="feature-facts"><span><b>public</b><code>global_skills/</code></span><span><b>manager</b><code>global_plugins/chatops-policy</code></span></div>
+          </div>
+        </div><div class="tab-panel " role="tabpanel" data-panel="secret" hidden>
+          <div class="feature-panel">
+            <h3>Agnes 模型和 key 单独管理</h3>
+            <p class="feature-lead">文本、图像、视频都走 Agnes 免费模型，key 通过脚本或密钥页录入，部署包只保留模板。</p>
+            <ul class="feature-list"><li>不要把 key 写入 README、网页、聊天记录或发布包。</li><li>SECRET_PORTAL_PUBLIC_URL 可使用 auto。</li><li>初始化后用 show-model 和最小调用验证。</li></ul>
+            <div class="feature-facts"><span><b>text</b><code>agnes-2.0-flash</code></span><span><b>portal</b><code>one-time secret page</code></span></div>
+          </div>
+        </div></div>
+        <div class="ops-board">
+          <div class="command-head"><span id="ops-command-label">manager.entrypoints</span><button class="copy-btn" type="button" data-copy="ops-code">复制</button></div>
+          <div class="command-body">
+            <p id="ops-command-summary" class="command-summary">母体执行运维时先走 chatopsctl 和 scripts 里的规范入口，入口无法覆盖时再请求管理员确认宿主机命令。</p>
+            <ul id="ops-command-notes" class="command-notes"><li>日常入口是 <code>chatopsctl status</code>、<code>doctor --strict</code>、<code>user list</code>、<code>manager show-model</code>。</li><li>删除、覆盖、重启、改权限和清理文件都要说明影响范围，并使用带确认参数的入口。</li><li>策略拦截器不应只说“无法执行”，要提示正确入口或需要管理员授权的宿主机命令。</li></ul>
+            <pre id="ops-code"><code>cd /opt/hermes-deployment
+sudo docker exec -u hermes hermes_manager chatopsctl status
+sudo docker exec -u hermes hermes_manager chatopsctl doctor --strict
+sudo docker exec -u hermes hermes_manager chatopsctl user list
+sudo docker exec -u hermes hermes_manager chatopsctl manager show-model</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section data-reveal>
+      <div class="section-kicker">Operating Flow</div>
+      <h2>日常运维像看仪表盘一样清楚</h2>
+      <ul class="flow-list"><li>管理员说“接入新用户”时，母体应调用 <code>chatopsctl user create</code> 和 <code>user bind</code>，生成二维码并提醒选择 Allow all direct messages。</li><li>管理员说“用户已扫码”时，母体先查容器和 pairing 状态；DM open 已生效时直接验证对话，不再要求 pairing approve。</li><li>用户生成文件时，子实例把成品放进自己的 files 目录，并用 MEDIA 路径推回微信。</li><li>遇到英文网关提示时，实例用中文解释错误含义，命令、文件名、错误码保留英文原文。</li></ul>
+      <p class="page-note">WSL2 验证重点是不要混用 Windows 文件权限，最终运行目录必须是 WSL2 内的 /opt/hermes-deployment/。</p>
+    </section>
+
+    <section id="agnes" data-reveal>
+      <div class="section-head"><div><div class="section-kicker">Agnes API</div><h2>Agnes API 是文本、图像、视频能力入口</h2></div><p>项目默认按 Agnes 免费模型准备，复现文档会说明 key 获取、模型填写、最小调用和排障。</p></div>
+      <div class="grid grid-3">
+        <div class="feature-card"><h3>获取 key</h3><ul class="feature-list"><li>访问 Agnes 官方控制台，注册或登录账号。</li><li>进入 API Key / Token 管理页，创建新的 key。</li><li>只在初始化脚本或密钥页录入 key，不要发到微信群或普通聊天窗口。</li></ul></div>
+        <div class="feature-card"><h3>模型填写</h3><ul class="feature-list"><li>文本、图片、视频模型分开填写。</li><li>文档中默认示例使用免费 Agnes 模型，占位值可替换。</li><li>部署包不内置真实 key，打包发布前必须保持空模板。</li></ul></div>
+        <div class="feature-card"><h3>验证方式</h3><ul class="feature-list"><li>先用 <code>chatopsctl manager show-model</code> 看配置。</li><li>再用文本、图片、视频各跑一次最小调用。</li><li>失败时保留英文错误码，同时用中文解释给用户。</li></ul></div>
+      </div>
+    </section>
+
+    <section id="verify" data-reveal>
+      <div class="section-kicker">Verification</div>
+      <h2>每次发布都要能被重新校验</h2>
+      <div class="fit-grid"><ul class="fit-list"><li>校验部署文件完整性：<code>DEPLOYMENT_CHECKSUMS.sha256</code></li><li>校验脚本语法和执行位：<code>bash -n scripts/*.sh</code></li><li>校验 Docker 配置：<code>docker compose --env-file .env config --quiet</code></li><li>校验母体入口：<code>chatopsctl doctor --strict</code></li><li>校验微信链路：管理员二维码、普通用户二维码、扫码后容器状态。</li></ul><div class="safe-zone"><h3>校验文件</h3><p>校验文件只覆盖必要部署文件，不包含 README、documents、page 和 release 产物。</p><code>sha256sum -c DEPLOYMENT_CHECKSUMS.sha256</code></div></div>
+    </section>
+
+    <section id="troubleshoot" data-reveal>
+      <div class="section-kicker">Troubleshooting</div>
+      <h2>扫码后 exit、二维码缺失和 pairing code 的判断顺序</h2>
+      <ul class="flow-list"><li>管理员绑定无二维码且报 <code>invalid choice: hermes</code>，优先检查 <code>scripts/bind-manager-weixin.sh</code> 中 <code>docker compose run</code> 参数顺序。</li><li>普通用户扫码后子实例 exit，先看 <code>docker logs bot_&lt;user_id&gt;</code>，再查 entrypoint、绑定命令是否覆盖主进程。</li><li>弹出 <code>Hi~ I do not recognize you yet</code> 和 pairing code，说明直聊授权不是 Allow all direct messages 或配置没有生效。</li><li>bind_driver.py 拿不到二维码时，检查网关输出格式、二维码 URL 抓取逻辑、MEDIA 保存目录权限。</li></ul>
+    </section>
+
+    <section data-reveal>
+      <div class="section-kicker">Documents</div>
+      <h2>按你的环境选择复现路径</h2>
+      <div class="doc-links"><a class="doc-link" href="./Hermes_ChatOps_Ubuntu_部署阅读页.html"><strong>Ubuntu</strong><span>阅读页生产推荐部署路径。</span></a><a class="doc-link" href="./Hermes_ChatOps_Windows_WSL2_部署阅读页.html"><strong>Windows WSL2</strong><span>阅读页桌面复现和 WSL2 注意事项。</span></a><a class="doc-link" href="./Hermes_ChatOps_macOS_Docker_部署阅读页.html"><strong>macOS Docker</strong><span>阅读页演示、开发验证和 Docker Desktop 限制。</span></a></div>
+    </section>
+  </main>
+
+  <footer>Hermes ChatOps deployment package. 固定部署根目录：<code>/opt/hermes-deployment/</code></footer>
+  <script>window.HERMES_PAGE = {"timeline": {"1": {"title": "解压并校验发布包", "copy": "先解 zip，再解 hermes-deployment.tar，校验必要部署文件的 sha256。", "label": "verify-package.sh", "code": "unzip hermes-chatops-release.zip\ntar -xf hermes-deployment.tar\ncd hermes-deployment\nsha256sum -c ../DEPLOYMENT_CHECKSUMS.sha256"}, "2": {"title": "复制到固定根目录", "copy": "所有文档、脚本和母体提示词都按 /opt/hermes-deployment/ 设计。", "label": "copy-to-opt.sh", "code": "sudo mkdir -p /opt/hermes-deployment\nsudo rsync -a --delete ./ /opt/hermes-deployment/\ncd /opt/hermes-deployment"}, "3": {"title": "安装 Docker 与 Compose", "copy": "Ubuntu 生产环境使用 Docker Engine 和 Compose 插件。", "label": "install-docker.sh", "code": "sudo ./scripts/install-docker-ubuntu22.sh\ndocker version\ndocker compose version"}, "4": {"title": "运行初始化脚本", "copy": "写入 .env、目录权限、模型配置、SECRET_PORTAL_PUBLIC_URL 和运行时目录。", "label": "prepare-deployment.sh", "code": "cd /opt/hermes-deployment\nsudo ./scripts/prepare-deployment.sh"}, "5": {"title": "启动母体", "copy": "母体启动后应能通过 chatopsctl 和 validate 脚本检查健康状态。", "label": "start-manager.sh", "code": "sudo docker compose --env-file .env up -d manager_bot\nsudo docker exec -u hermes hermes_manager chatopsctl status"}, "6": {"title": "绑定管理员微信", "copy": "bind-manager-weixin.sh 必须显示二维码链接，不能出现 invalid choice: hermes。", "label": "bind-manager-weixin.sh", "code": "cd /opt/hermes-deployment\nsudo ./scripts/bind-manager-weixin.sh"}, "7": {"title": "运行验证脚本", "copy": "validate.sh 检查 compose、权限、脚本、Skill 边界、chatopsctl 静态约束和运行状态。", "label": "validate.sh", "code": "cd /opt/hermes-deployment\nsudo ./scripts/validate.sh"}, "8": {"title": "创建并绑定子实例", "copy": "新用户扫码时选择 Allow all direct messages，扫码后容器继续运行并可直接对话。", "label": "create-user.sh", "code": "sudo docker exec -u hermes hermes_manager chatopsctl user create oneplus\nsudo docker exec -u hermes hermes_manager chatopsctl user bind oneplus"}}, "ops": {"manager": {"label": "manager.entrypoints", "summary": "母体执行运维时先走 chatopsctl 和 scripts 里的规范入口，入口无法覆盖时再请求管理员确认宿主机命令。", "notes": ["日常入口是 <code>chatopsctl status</code>、<code>doctor --strict</code>、<code>user list</code>、<code>manager show-model</code>。", "删除、覆盖、重启、改权限和清理文件都要说明影响范围，并使用带确认参数的入口。", "策略拦截器不应只说“无法执行”，要提示正确入口或需要管理员授权的宿主机命令。"], "code": "cd /opt/hermes-deployment\nsudo docker exec -u hermes hermes_manager chatopsctl status\nsudo docker exec -u hermes hermes_manager chatopsctl doctor --strict\nsudo docker exec -u hermes hermes_manager chatopsctl user list\nsudo docker exec -u hermes hermes_manager chatopsctl manager show-model"}, "child": {"label": "child.lifecycle", "summary": "子实例创建、绑定、审批、重启和删除都从母体受控入口发起；用户扫码后容器不能因为绑定流程退出。", "notes": ["<code>user bind</code> 必须生成二维码链接和 <code>MEDIA:/opt/data/files/images/&lt;user_id&gt;_weixin_qr.png</code>。", "直聊授权必须选择 <code>Allow all direct messages</code>，不要选择 <code>Use DM pairing approval</code>。", "如果仍出现 pairing code，说明 DM open 未生效或绑定命令落到了 pairing approval 模式。"], "code": "cd /opt/hermes-deployment\nsudo docker exec -u hermes hermes_manager chatopsctl user create oneplus\nsudo docker exec -u hermes hermes_manager chatopsctl user bind oneplus\nsudo docker exec -u hermes hermes_manager chatopsctl user pairing list oneplus\nsudo docker exec -u hermes hermes_manager chatopsctl user pairing approve-pending oneplus\nsudo docker exec -u hermes hermes_manager chatopsctl user restart oneplus"}, "skill": {"label": "skill.boundary", "summary": "公共 Skill 可同步到子实例，母体管理 Skill 不下发；修改 Skill 后要通过验证脚本检查边界。", "notes": ["母体私有 Skill 放在 manager 作用域，普通用户不能看到宿主机和 Docker 管理工具。", "公共 Skill 同步后必要时重启子实例，避免旧进程继续使用旧文件。", "英文网关提示可以中文解释，但命令、文件名和错误码保持原文。"], "code": "sudo docker exec -u hermes hermes_manager chatopsctl skill list --scope manager\nsudo docker exec -u hermes hermes_manager chatopsctl skill list --scope public\nsudo docker exec -u hermes hermes_manager chatopsctl public-skill sync --restart --confirm\nsudo ./scripts/validate.sh"}, "secret": {"label": "secret.models", "summary": "Agnes 文本、图片、视频模型和 API key 通过初始化脚本或一次性密钥页写入，避免出现在微信聊天记录。", "notes": ["文本、图像、视频模型分开配置，避免只切文本模型导致媒体 Skill 找不到模型。", "教程里保留 Agnes API 和 key 获取步骤，复现者按页面填写自己的 key。", "不确定公网地址时使用 <code>SECRET_PORTAL_PUBLIC_URL=auto</code>，由脚本根据局域网地址生成。"], "code": "cd /opt/hermes-deployment\nsudo ./scripts/prepare-deployment.sh\nsudo docker exec -u hermes hermes_manager chatopsctl secret network\nsudo docker exec -u hermes hermes_manager chatopsctl manager show-model"}}};</script>
+  <script src="./assets/hermes-page.js" defer></script>
+</body>
+</html>
